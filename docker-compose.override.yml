@@ -6,15 +6,9 @@
 
 services:
   auth-service:
-    build:
-      target: builder   # stay in builder stage for faster rebuilds
     environment:
       SPRING_PROFILES_ACTIVE: dev
       SPRING_JPA_SHOW_SQL: "true"
-    volumes:
-      - ./auth-service/src:/build/src:ro
-    # Hot-reload via Spring DevTools would require the full dev image;
-    # for now, rebuild container on code change.
 
   app-service:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
@@ -37,7 +31,7 @@ services:
 
   postgres:
     ports:
-      - "127.0.0.1:5432:5432"   # Expose for local DB tools in dev
+      - "127.0.0.1:5433:5432"   # Expose for local DB tools in dev
 
   redis:
     ports:

@@ -1,17 +1,13 @@
 # ---- Build Stage ----
 FROM maven:3.9-eclipse-temurin-21-alpine AS builder
 WORKDIR /build
-# Copy POM first for dependency layer caching
 COPY pom.xml .
-RUN --mount=type=cache,target=/root/.m2 \
-    mvn dependency:go-offline -q
 COPY src ./src
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn package -DskipTests -q
+    mvn clean package -DskipTests
 
 # ---- Runtime Stage ----
 FROM eclipse-temurin:21-jre-alpine
-# Create non-root user/group
 RUN addgroup -S ppauth && adduser -S ppauth -G ppauth
 WORKDIR /app
 COPY --from=builder /build/target/*.jar app.jar

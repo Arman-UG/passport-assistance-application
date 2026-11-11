@@ -94,7 +94,6 @@ async def upload_document(
     doc = ApplicationDocument(
         checklist_id=checklist_id,
         application_id=application_id,
-        uploaded_by=current_user.user_id,
         original_filename=original_filename,
         storage_key=storage_key,
         mime_type=file.content_type or "application/octet-stream",

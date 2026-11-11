@@ -51,13 +51,13 @@ public class JwtConfig {
         try {
             KeyFactory kf = KeyFactory.getInstance("RSA");
 
-            byte[] privBytes = Base64.getDecoder().decode(privateKeyBase64.strip());
+            byte[] privBytes = extractDerBytes(privateKeyBase64, "PRIVATE KEY");
             this.privateKey  = (RSAPrivateKey) kf.generatePrivate(new PKCS8EncodedKeySpec(privBytes));
 
-            byte[] pubBytes = Base64.getDecoder().decode(publicKeyBase64.strip());
+            byte[] pubBytes = extractDerBytes(publicKeyBase64, "PUBLIC KEY");
             this.publicKey  = (RSAPublicKey) kf.generatePublic(new X509EncodedKeySpec(pubBytes));
 
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+        } catch (Exception e) {
             throw new IllegalStateException("[JWT] Failed to decode RSA key pair: " + e.getMessage(), e);
         }
 
@@ -65,6 +65,28 @@ public class JwtConfig {
         if (privateKey.getModulus().bitLength() < 2048) {
             throw new IllegalStateException("[JWT] RSA key must be at least 2048 bits.");
         }
+    }
+
+    private byte[] extractDerBytes(String keyInput, String headerType) {
+        String input = keyInput.strip();
+        if (!input.contains("BEGIN")) {
+            try {
+                byte[] decoded = Base64.getDecoder().decode(input);
+                String decodedStr = new String(decoded, java.nio.charset.StandardCharsets.UTF_8);
+                if (decodedStr.contains("BEGIN")) {
+                    input = decodedStr;
+                } else {
+                    return decoded;
+                }
+            } catch (IllegalArgumentException e) {
+                // Ignore and proceed
+            }
+        }
+        String clean = input
+            .replaceAll("-----BEGIN [A-Z0-9 ]+-----", "")
+            .replaceAll("-----END [A-Z0-9 ]+-----", "")
+            .replaceAll("\\s+", "");
+        return Base64.getDecoder().decode(clean);
     }
 
     // ── Getters & Setters ──────────────────────────────────────────────────────

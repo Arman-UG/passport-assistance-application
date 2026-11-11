@@ -82,18 +82,18 @@ class DocumentResponse(BaseModel):
     id: UUID
     checklist_id: UUID
     application_id: UUID
-    uploaded_by: UUID
+    uploaded_by: Optional[UUID] = None
     original_filename: str
     storage_key: str
     mime_type: str
     file_size_bytes: int
     file_hash: str
     review_status: str
-    rejection_reason: Optional[str]
-    reviewed_by: Optional[UUID]
-    reviewed_at: Optional[datetime]
+    rejection_reason: Optional[str] = None
+    reviewed_by: Optional[UUID] = None
+    reviewed_at: Optional[datetime] = None
     uploaded_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
 
 
 # ---------------------------------------------------------------------------

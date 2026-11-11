@@ -109,7 +109,7 @@ public class Argon2PasswordService {
         if (parts.length != 6 || !"argon2id".equals(parts[1])) {
             throw new IllegalArgumentException("Unsupported hash format.");
         }
-        Base64.Decoder dec = Base64.getDecoder().withoutPadding();
+        Base64.Decoder dec = Base64.getDecoder();
         byte[] salt = dec.decode(parts[4]);
         byte[] hash = dec.decode(parts[5]);
         return new ParsedHash(salt, hash);

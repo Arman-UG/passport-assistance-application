@@ -171,7 +171,6 @@ async def assign_checklist(
                 requirement_id=item.requirement_id,
                 is_mandatory=item.is_mandatory,
                 agent_notes=item.agent_notes,
-                assigned_by=current_user.user_id,
             )
             db.add(new_item)
 
@@ -239,7 +238,6 @@ async def send_customer_notification(
     notification = Notification(
         recipient_id=app.customer_id,
         application_id=app.id,
-        sent_by=current_user.user_id,
         title=notif.title,
         message=notif.message,
     )

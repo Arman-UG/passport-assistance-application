@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, List, Optional
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    DateTime,
     ForeignKey,
     String,
     Text,
@@ -52,10 +53,10 @@ class Application(Base):
         String(64), nullable=False, default="DRAFT"
     )
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now(), onupdate=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
 
     # Relationships
@@ -104,17 +105,20 @@ class DocumentRequirement(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    instructions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    precautions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     allowed_formats: Mapped[str] = mapped_column(
-        String(255), nullable=False, default="pdf,jpg,jpeg,png"
+        "accepted_formats", String(200), nullable=False, default="pdf,jpg,jpeg,png"
     )
     max_file_size_bytes: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, default=5_242_880
+        "maximum_file_size", BigInteger, nullable=False, default=5_242_880
     )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    sort_order: Mapped[int] = mapped_column(nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
     # Relationships
@@ -134,7 +138,7 @@ class ApplicationChecklist(Base):
 
     __tablename__ = "application_checklists"
     __table_args__ = (
-        UniqueConstraint("application_id", "requirement_id", name="uq_checklist_app_req"),
+        UniqueConstraint("application_id", "requirement_id", name="uq_app_req"),
         {"schema": "app"},
     )
 
@@ -154,11 +158,8 @@ class ApplicationChecklist(Base):
     )
     is_mandatory: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     agent_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    assigned_by: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), nullable=True
-    )
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        "assigned_at", DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
     # Relationships
@@ -201,7 +202,7 @@ class ApplicationHistory(Base):
     new_status: Mapped[str] = mapped_column(String(64), nullable=False)
     remarks: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
     # Relationships
@@ -230,11 +231,11 @@ class InternalNote(Base):
         index=True,
     )
     author_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False
+        "agent_id", UUID(as_uuid=True), nullable=False
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
     # Relationships
@@ -257,22 +258,18 @@ class Notification(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     recipient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, index=True
+        "user_id", UUID(as_uuid=True), nullable=False, index=True
     )
     application_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("app.applications.id", ondelete="SET NULL"),
         nullable=True,
     )
-    sent_by: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), nullable=True
-    )
-    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    title: Mapped[str] = mapped_column(String(300), nullable=False)
     message: Mapped[str] = mapped_column(Text, nullable=False)
     is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    read_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
     # Relationships

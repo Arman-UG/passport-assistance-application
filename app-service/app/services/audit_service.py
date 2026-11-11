@@ -59,7 +59,7 @@ async def log_event(
         resource_type=resource_type,
         resource_id=resource_id,
         outcome=outcome,
-        metadata=safe_metadata,
+        safe_metadata=safe_metadata,
     )
     db.add(entry)
     # We deliberately do NOT commit here — the caller's transaction boundary

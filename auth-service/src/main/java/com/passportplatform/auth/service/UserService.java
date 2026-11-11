@@ -76,14 +76,9 @@ public class UserService {
             throw new DuplicateEmailException("An account with this email address already exists.");
         }
 
-        Role assignedRole;
-        try {
-            assignedRole = Role.valueOf(req.role().toUpperCase(Locale.ROOT));
-            if (assignedRole == Role.CUSTOMER) {
-                throw new IllegalArgumentException("Cannot create CUSTOMER via administrative provisioning");
-            }
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid role specified. Must be AGENT or ADMIN.");
+        Role assignedRole = req.role();
+        if (assignedRole == null || assignedRole == Role.CUSTOMER) {
+            throw new IllegalArgumentException("Cannot create CUSTOMER via administrative provisioning. Must be AGENT or ADMIN.");
         }
 
         String passwordHash = passwordService.hashPassword(req.password());

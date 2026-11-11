@@ -35,7 +35,7 @@ class AppAuditLog(Base):
     # SUCCESS | FAILURE | BLOCKED
     outcome: Mapped[str] = mapped_column(String(16), nullable=False)
     # Safe key-value metadata — MUST NOT contain secrets, tokens, or file content.
-    metadata: Mapped[Optional[Any]] = mapped_column(JSONB, nullable=True)
+    safe_metadata: Mapped[Optional[Any]] = mapped_column("safe_metadata", JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now()
     )

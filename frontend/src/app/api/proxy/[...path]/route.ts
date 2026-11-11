@@ -44,7 +44,8 @@ async function handleProxy(request: NextRequest, params: { path: string[] }) {
     return NextResponse.json({ message: "Authentication required" }, { status: 401 });
   }
 
-  const subPath = params.path.join("/");
+  const rawSubPath = params.path.join("/");
+  const subPath = rawSubPath.startsWith("api/") ? rawSubPath.slice(4) : rawSubPath;
   const targetUrl = new URL(`/api/${subPath}`, getInternalAppUrl());
   targetUrl.search = request.nextUrl.search;
 

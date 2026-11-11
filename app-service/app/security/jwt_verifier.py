@@ -109,7 +109,10 @@ class JWTVerifier:
         try:
             user_id = UUID(claims["sub"])
             role: str = str(claims["role"]).upper()
-            session_id = UUID(claims["session_id"])
+            raw_session = claims.get("session_id") or claims.get("sessionId")
+            if not raw_session:
+                raise KeyError("sessionId")
+            session_id = UUID(str(raw_session))
         except (KeyError, ValueError, TypeError) as exc:
             logger.warning("JWT claims extraction failed: %s", exc)
             raise HTTPException(

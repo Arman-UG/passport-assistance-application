@@ -11,7 +11,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "127.0.0.1:5432:5432"   # Localhost only — never expose publicly
+      - "127.0.0.1:5433:5432"   # Mapped to 5433 to avoid conflicts with host PostgreSQL
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
       - ./database/init:/docker-entrypoint-initdb.d:ro
@@ -82,6 +82,8 @@ services:
       EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-Passport Assistance Platform}
       ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL:-}
       ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-}
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:-passport-internal-secret-dev-default-key-32chars}
+      FRONTEND_ORIGIN: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
       SERVER_PORT: 8080
       SPRING_PROFILES_ACTIVE: dev
     ports:

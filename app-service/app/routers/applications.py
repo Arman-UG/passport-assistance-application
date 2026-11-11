@@ -33,6 +33,7 @@ def generate_application_reference() -> str:
     return f"PP-2026-{suffix}"
 
 
+@router.post("", response_model=ApplicationResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=ApplicationResponse, status_code=status.HTTP_201_CREATED)
 async def create_application(
     current_user: TokenData = Depends(get_current_customer),
@@ -59,7 +60,6 @@ async def create_application(
             application_id=app.id,
             requirement_id=req.id,
             is_mandatory=True,
-            assigned_by=None,
         )
         db.add(chk)
 

@@ -1,6 +1,8 @@
 package com.passportplatform.auth.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -37,6 +39,7 @@ public class AuditLog {
     @Column(name = "user_agent", columnDefinition = "TEXT")
     private String userAgent;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "metadata", columnDefinition = "JSONB")
     private String metadata;
 
