@@ -1,0 +1,162 @@
+services:
+  # ──────────────────────────────────────────
+  # PostgreSQL — Permanent Database
+  # ──────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: pp_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "127.0.0.1:5432:5432"   # Localhost only — never expose publicly
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pp_internal
+
+  # ──────────────────────────────────────────
+  # Redis — Sessions, Rate Limits, Token State
+  # ──────────────────────────────────────────
+  redis:
+    image: redis:7.4-alpine
+    container_name: pp_redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    ports:
+      - "127.0.0.1:6379:6379"   # Localhost only
+    volumes:
+      - ./data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pp_internal
+
+  # ──────────────────────────────────────────
+  # Service B — Java Spring Boot Auth Service
+  # ──────────────────────────────────────────
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: pp_auth
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      JWT_PRIVATE_KEY_BASE64: ${JWT_PRIVATE_KEY_BASE64}
+      JWT_PUBLIC_KEY_BASE64: ${JWT_PUBLIC_KEY_BASE64}
+      JWT_ISSUER: ${JWT_ISSUER}
+      JWT_AUDIENCE: ${JWT_AUDIENCE}
+      JWT_ACCESS_TOKEN_EXPIRY_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRY_MINUTES:-15}
+      JWT_REFRESH_TOKEN_EXPIRY_DAYS: ${JWT_REFRESH_TOKEN_EXPIRY_DAYS:-7}
+      JWT_MAX_SESSION_DAYS: ${JWT_MAX_SESSION_DAYS:-30}
+      RATE_LIMIT_LOGIN_MAX_ATTEMPTS: ${RATE_LIMIT_LOGIN_MAX_ATTEMPTS:-5}
+      RATE_LIMIT_LOGIN_WINDOW_MINUTES: ${RATE_LIMIT_LOGIN_WINDOW_MINUTES:-15}
+      ENABLE_EMAIL: ${ENABLE_EMAIL:-false}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-Passport Assistance Platform}
+      ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL:-}
+      ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-}
+      SERVER_PORT: 8080
+      SPRING_PROFILES_ACTIVE: dev
+    ports:
+      - "127.0.0.1:8080:8080"   # Internal only — not for browser access
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - pp_internal
+    volumes:
+      - auth_logs:/app/logs
+
+  # ──────────────────────────────────────────
+  # Service C — Python FastAPI App Service
+  # ──────────────────────────────────────────
+  app-service:
+    build:
+      context: ./app-service
+      dockerfile: Dockerfile
+    container_name: pp_app
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_SYNC: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      JWT_PUBLIC_KEY_BASE64: ${JWT_PUBLIC_KEY_BASE64_APP}
+      JWT_ISSUER: ${JWT_ISSUER_APP}
+      JWT_AUDIENCE: ${JWT_AUDIENCE_APP}
+      UPLOAD_DIR: /data/uploads
+      MAX_FILE_SIZE_BYTES: ${MAX_FILE_SIZE_BYTES:-5242880}
+      ALLOWED_EXTENSIONS: ${ALLOWED_EXTENSIONS:-pdf,jpg,jpeg,png}
+      ALLOWED_MIME_TYPES: ${ALLOWED_MIME_TYPES:-application/pdf,image/jpeg,image/png}
+      APP_PORT: 8000
+    ports:
+      - "127.0.0.1:8000:8000"   # Internal only
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - pp_internal
+    volumes:
+      - ./data/uploads:/data/uploads
+
+  # ──────────────────────────────────────────
+  # Service A — Next.js Frontend + BFF
+  # ──────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pp_frontend
+    restart: unless-stopped
+    environment:
+      INTERNAL_AUTH_SERVICE_URL: http://auth-service:8080
+      INTERNAL_APP_SERVICE_URL: http://app-service:8000
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      COOKIE_SAME_SITE: ${COOKIE_SAME_SITE:-Strict}
+      NODE_ENV: production
+    ports:
+      - "0.0.0.0:3000:3000"    # Public-facing — only service exposed externally
+    depends_on:
+      - auth-service
+      - app-service
+    networks:
+      - pp_internal
+
+networks:
+  pp_internal:
+    driver: bridge
+    internal: false   # auth/app services are internal; frontend reaches out
+
+volumes:
+  auth_logs:

@@ -1,0 +1,117 @@
+server:
+  port: 8080
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+
+spring:
+  application:
+    name: auth-service
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:${DB_URL:jdbc:postgresql://localhost:5432/passport_platform}}
+    username: ${SPRING_DATASOURCE_USERNAME:${DB_USERNAME:pp_user}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:pp_password}}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: AuthHikariPool
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: auth
+        jdbc:
+          time_zone: UTC
+    open-in-view: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 2
+          max-wait: 1000ms
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    schemas: auth
+    default-schema: auth
+    baseline-on-migrate: false
+    validate-on-migrate: true
+    out-of-order: false
+
+  security:
+    user:
+      name: disabled
+      password: disabled
+
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+jwt:
+  private-key-base64: ${JWT_PRIVATE_KEY_BASE64}
+  public-key-base64: ${JWT_PUBLIC_KEY_BASE64}
+  issuer: ${JWT_ISSUER:passport-platform-auth}
+  audience: ${JWT_AUDIENCE:passport-platform}
+  access-token-expiry-minutes: ${JWT_ACCESS_EXPIRY_MINUTES:15}
+  refresh-token-expiry-days: ${JWT_REFRESH_EXPIRY_DAYS:30}
+  max-session-days: ${JWT_MAX_SESSION_DAYS:90}
+
+rate-limit:
+  login:
+    max-attempts: ${RATE_LIMIT_LOGIN_MAX_ATTEMPTS:10}
+    window-minutes: ${RATE_LIMIT_LOGIN_WINDOW_MINUTES:15}
+
+internal:
+  api-secret: ${INTERNAL_API_SECRET:passport-internal-secret-dev-default-key-32chars}
+
+cors:
+  frontend-origin: ${FRONTEND_ORIGIN:http://localhost:3000}
+
+admin:
+  bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:}
+  bootstrap-password: ${ADMIN_BOOTSTRAP_PASSWORD:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: INFO
+    com.passportplatform: INFO
+    org.springframework.security: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

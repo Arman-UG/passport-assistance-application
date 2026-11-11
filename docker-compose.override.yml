@@ -1,0 +1,44 @@
+# ============================================================
+# docker-compose.override.yml — Development overrides
+# This file is loaded automatically by docker compose in dev.
+# DO NOT use in production — use docker-compose.yml only.
+# ============================================================
+
+services:
+  auth-service:
+    build:
+      target: builder   # stay in builder stage for faster rebuilds
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_JPA_SHOW_SQL: "true"
+    volumes:
+      - ./auth-service/src:/build/src:ro
+    # Hot-reload via Spring DevTools would require the full dev image;
+    # for now, rebuild container on code change.
+
+  app-service:
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./app-service/app:/app/app:ro
+      - ./data/uploads:/data/uploads
+
+  frontend:
+    build:
+      target: dev
+    command: npm run dev
+    environment:
+      NODE_ENV: development
+      COOKIE_SECURE: "false"
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+    ports:
+      - "0.0.0.0:3000:3000"
+
+  postgres:
+    ports:
+      - "127.0.0.1:5432:5432"   # Expose for local DB tools in dev
+
+  redis:
+    ports:
+      - "127.0.0.1:6379:6379"   # Expose for local Redis CLI in dev

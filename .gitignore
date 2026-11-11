@@ -1,0 +1,74 @@
+# ============================================================
+# Passport Platform — .gitignore
+# ============================================================
+
+# --- Environment & Secrets ---
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+*.p12
+*.jks
+
+# --- Data directories (Docker volumes) ---
+data/
+!data/.gitkeep
+
+# --- Node / Next.js ---
+node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.turbo/
+frontend/dist/
+*.tsbuildinfo
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+app-service/.venv/
+app-service/venv/
+app-service/.env
+app-service/dist/
+app-service/build/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Java / Maven ---
+auth-service/target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+!.mvn/wrapper/maven-wrapper.jar
+
+# --- Docker ---
+docker-compose.override.yml.local
+
+# --- IDE ---
+.idea/
+*.iml
+.vscode/settings.json
+.vscode/*.code-workspace
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Test coverage ---
+coverage/
+htmlcov/
+.coverage
