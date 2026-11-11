@@ -12,6 +12,7 @@ FROM base AS builder
 RUN npm ci
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV BUILD_STANDALONE=true
 RUN npm run build
 
 FROM node:20-alpine AS runner
