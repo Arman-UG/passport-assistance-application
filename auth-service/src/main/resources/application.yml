@@ -37,9 +37,12 @@ spring:
 
   data:
     redis:
+      url: ${REDIS_URL:}
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+      ssl:
+        enabled: ${SPRING_DATA_REDIS_SSL_ENABLED:${REDIS_SSL_ENABLED:false}}
       timeout: 2000ms
       lettuce:
         pool:
@@ -107,7 +110,11 @@ management:
         include: health
   endpoint:
     health:
-      show-details: never
+      show-details: when_authorized
+      show-components: always
+      roles: ADMIN
+      probes:
+        enabled: true
   health:
     mail:
       enabled: false

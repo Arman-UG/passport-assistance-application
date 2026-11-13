@@ -55,7 +55,7 @@ public class SecurityConfig {
             // ── Authorization rules ────────────────────────────────────────────
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll()
-                .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 // /internal/** is protected by InternalSecretFilter, not JWT
                 .requestMatchers("/internal/**").permitAll()
                 .anyRequest().authenticated()
